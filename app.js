@@ -17,7 +17,18 @@ let content = '';
 
 //creates server
 const server = http.createServer((req, res) => {
+ //Handles error in request
+ req.on("error", (err) => {
+    console.error(err);
+    res.statusCode = 400;
+    res.end();
+  });
 
+  //Handles error in response
+  res.on("error", (err) => {
+    console.error(err);
+  });
+    
     //only accepts 'GET' method
     if (req.method != 'GET') {
         res.statusCode = 501;
@@ -37,6 +48,7 @@ const server = http.createServer((req, res) => {
     if (fileName == '/') {
         content = `Didn't provide a valid path\n\n`;
         logger.appendFile(outputFile, content);
+        res.statusCode = 400;
         res.end(`Provide a valid path like "http://192.168.68.200:3000/file_name.extension"\n`)
         return;
     }
