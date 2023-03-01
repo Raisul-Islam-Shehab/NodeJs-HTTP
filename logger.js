@@ -1,5 +1,6 @@
 import fs, { appendFileSync, writeFileSync } from 'fs';
 
+//Appends time to the output file
 function appendTime(fileName) {
     let date_ob = new Date();
     // current hours
@@ -16,7 +17,7 @@ function appendTime(fileName) {
 }
 
 
-//Write the Output.txt file. If file does not exist, creates a file.
+//Write the Output.txt file. If file does not exist, creates a file named 'Output.txt'
 function writeFile(fileName, content) {
     try {
         writeFileSync(fileName, content, { flag: 'a+' });
@@ -26,7 +27,7 @@ function writeFile(fileName, content) {
     }
 }
 
-//Appends texts at the end of the Output.txt file
+//Appends texts at the end of the 'Output.txt' file
 function appendFile(fileName, content) {
     try {
         appendFileSync(fileName, content);
@@ -36,4 +37,5 @@ function appendFile(fileName, content) {
     }
 }
 
+//Exports the functions outside the module
 export { writeFile, appendFile, appendTime }; 

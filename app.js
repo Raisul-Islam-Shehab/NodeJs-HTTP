@@ -6,33 +6,34 @@ import path from 'path';
 import { existsSync } from 'fs';
 import * as logger from './logger.js';
 
-//Output file where all actions will be documented
+//Defines the output file where all actions will be documented
 const outputFile = 'Output.txt';
 
-//port number
+//Defines the port number
 const port = 3000;
 
-//To hold the string describing the action happening
+//Defines the variable to hold the strings describing the action happening
 let content = '';
 
-//creates server
+//Creates server
 const server = http.createServer((req, res) => {
- //Handles error in request
- req.on("error", (err) => {
-    console.error(err);
-    res.statusCode = 400;
-    res.end();
-  });
 
-  //Handles error in response
-  res.on("error", (err) => {
-    console.error(err);
-  });
-    
-    //only accepts 'GET' method
+    //Checks error on reading the request
+    req.on("error", (err) => {
+        console.error(err);
+        res.statusCode = 400;
+        res.end("Error reading the request body");
+    });
+
+    //Checks error on writing the response
+    res.on("error", (err) => {
+        console.error(err);
+    });
+
+    //Accepts only the 'GET' method and appends the action to the output file 
     if (req.method != 'GET') {
         res.statusCode = 501;
-        content = 'Operation not supported. Use "GET" method.\n';
+        content = 'Operation not supported. Use "GET" method.\n\n';
         logger.appendTime(outputFile);
         logger.appendFile(outputFile, content);
         res.end(content);
@@ -45,6 +46,7 @@ const server = http.createServer((req, res) => {
     //Extracts the file name
     const fileName = req.url;
 
+    //Checks if provided path is valid or not
     if (fileName == '/') {
         content = `Didn't provide a valid path\n\n`;
         logger.appendFile(outputFile, content);
@@ -53,6 +55,7 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    //Appends the file path to the output file
     const filePath = "/home/dsi/NodeJs/HelloWorld" + fileName;
     content = `Request path extracted "${filePath}"\n`;
     logger.appendFile(outputFile, content);
@@ -66,12 +69,12 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    //Extracts the file extension
+    //Appends the file extension to the output file
     let fileExt = path.extname(filePath);
     content = `File extention is "${fileExt}"\n`;
     logger.appendFile(outputFile, content);
 
-    //Sets response headers
+    //Sets response headers according to the request file
     switch (fileExt) {
         case '.mp4':
             res.setHeader('Content-Type', 'video/mp4');
@@ -117,20 +120,20 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    //Appends the file size to the output file
     content = `File size is "${stats.size}" bytes\n`;
     logger.appendFile(outputFile, content);
 
-    //Shows the file on browser
+    //Shows the file on browser and appends the action to the output file
     res.statusCode = 200;
     content = 'File shown in the browser\n\n';
     logger.appendFile(outputFile, content);
-
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
 
 });
 
-//Listening to port 3000
+//Listens to port 3000
 server.listen(port, () => {
     content = `Server running at "http://192.168.68.200:${port}"\n`;
     console.log(content);
@@ -139,6 +142,6 @@ server.listen(port, () => {
         logger.writeFile(outputFile, content);
     } else {
         logger.appendFile(outputFile, content);
-    }
-
+    };
 });
+
