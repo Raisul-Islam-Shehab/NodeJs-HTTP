@@ -1,7 +1,7 @@
 //This program handles HTTP request and response at url "http://192.168.68.200:3000/"
 import http from 'http';
 import url from 'url';
-import fs, { statSync } from 'fs';
+import fs, { access, statSync, constants } from 'fs';
 import path from 'path';
 import { existsSync } from 'fs';
 import * as logger from './logger.js';
@@ -61,75 +61,67 @@ const server = http.createServer((req, res) => {
     logger.appendFile(outputFile, content);
 
     //Checks if the file exists or not
-    if (!existsSync(filePath)) {
-        res.statusCode = 404;
-        content = 'File not found\n\n';
+    // if (!existsSync(filePath)) {
+    //     res.statusCode = 404;
+    //     content = 'File not found\n\n';
+    //     logger.appendFile(outputFile, content);
+    //     res.end(content);
+    //     return;
+    // }
+
+
+    access(filePath, constants.R_OK | constants.F_OK, (err) => {
+        if (err) {
+            if (err.code === 'EACCES') {
+                res.statusCode = 403;
+
+                content = 'Read permission is not allowed\n\n';
+                logger.appendFile(outputFile, content);
+                res.end(content);
+                return;
+            }
+            else {
+                res.statusCode = 404;
+
+                content = 'File not found\n\n';
+                logger.appendFile(outputFile, content);
+                res.end(content);
+                return;
+            }
+
+        }
+
+        //Appends the file extension to the output file
+        let fileExt = path.extname(filePath);
+        content = `File extention is "${fileExt}"\n`;
         logger.appendFile(outputFile, content);
-        res.end(content);
-        return;
-    }
 
-    //Appends the file extension to the output file
-    let fileExt = path.extname(filePath);
-    content = `File extention is "${fileExt}"\n`;
-    logger.appendFile(outputFile, content);
+        //Extracts the file stats
+        let stats;
+        try {
+            stats = statSync(filePath);
+        } catch (err) {
+            console.error(err);
+            return;
+        }
 
-    //Sets response headers according to the request file
-    switch (fileExt) {
-        case '.mp4':
-            res.setHeader('Content-Type', 'video/mp4');
-            break;
-        case '.png':
-            res.setHeader('Content-Type', 'image/png');
-            break;
-        case '.jpg':
-            res.setHeader('Content-Type', 'image/jpeg');
-            break;
-        case '.gif':
-            res.setHeader('Content-Type', 'image/gif');
-            break;
-        case '.html':
-            res.setHeader('Content-Type', 'text/html');
-            break;
-        case '.txt':
-            res.setHeader('Content-Type', 'text/plain');
-            break;
-        case '.xml':
-            res.setHeader('Content-Type', 'text/xml');
-            break;
-        case '.json':
-            res.setHeader('Content-Type', 'application/json');
-            break;
-        case '.css':
-            res.setHeader('Content-Type', 'text/css');
-            break;
-        case '.pdf':
-            res.setHeader('Content-Type', 'application/pdf');
-            break;
-        case '.mpeg':
-            res.setHeader('Content-Type', 'audio/mpeg');
-            break;
-    }
+        //Appends the file size to the output file
+        content = `File size is "${stats.size}" bytes\n`;
+        logger.appendFile(outputFile, content);
 
-    //Extracts the file stats
-    let stats;
-    try {
-        stats = statSync(filePath);
-    } catch (err) {
-        console.error(err);
-        return;
-    }
+        //Shows the file on browser and appends the action to the output file
+        res.statusCode = 200;
+        content = 'File shown in the browser\n\n';
+        logger.appendFile(outputFile, content);
 
-    //Appends the file size to the output file
-    content = `File size is "${stats.size}" bytes\n`;
-    logger.appendFile(outputFile, content);
-
-    //Shows the file on browser and appends the action to the output file
-    res.statusCode = 200;
-    content = 'File shown in the browser\n\n';
-    logger.appendFile(outputFile, content);
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
+        try {
+            const stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+        } catch (err) {
+            console.error(err);
+            return;
+        }
+    });
 
 });
 
